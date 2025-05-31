@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		/* Light theme colors */
+		--color-primary: #2563eb;
+		--color-success: #10b981;
+		--color-warning: #f59e0b;
+		--color-danger: #ef4444;
+		--color-neutral: #6b7280;
+		
+		--bg-primary: #ffffff;
+		--bg-secondary: #f9fafb;
+		--bg-tertiary: #f3f4f6;
+		--text-primary: #111827;
+		--text-secondary: #6b7280;
+		--border: #e5e7eb;
+	}
+	
+	.dark {
+		--bg-primary: #111827;
+		--bg-secondary: #1f2937;
+		--bg-tertiary: #374151;
+		--text-primary: #f9fafb;
+		--text-secondary: #9ca3af;
+		--border: #374151;
+	}
+	
+	html,
+	body,
+	#root {
+		@apply h-full overflow-hidden;
+	}
+	
+	body {
+		@apply bg-[var(--bg-primary)] text-[var(--text-primary)];
+		font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		margin: 0;
+		padding: 0;
+	}
+}
+
+@layer utilities {
+	.text-primary {
+		@apply text-[#2563eb];
+	}
+	.text-success {
+		@apply text-[#10b981];
+	}
+	.text-warning {
+		@apply text-[#f59e0b];
+	}
+	.text-danger {
+		@apply text-[#ef4444];
+	}
+	.bg-primary {
+		@apply bg-[#2563eb];
+	}
+	.bg-success {
+		@apply bg-[#10b981];
+	}
+	.bg-warning {
+		@apply bg-[#f59e0b];
+	}
+	.bg-danger {
+		@apply bg-[#ef4444];
+	}
+}
