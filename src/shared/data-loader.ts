@@ -347,12 +347,11 @@ export function calculateHourlySummary(
 	if (skipTimeFilter) {
 		// For today's data, show hours up to and including the current hour
 		const currentHour = new Date();
-		currentHour.setMinutes(0, 0, 0);
-		const hoursFromStart = Math.floor(
+		const hoursFromStart = Math.ceil(
 			(currentHour.getTime() - startHour.getTime()) / (60 * 60 * 1000),
 		);
-		// Add 1 to include the current hour
-		actualHoursLimit = Math.min(hoursFromStart + 1, 24); // max 24 hours
+		// Use Math.ceil to ensure we always include the current hour
+		actualHoursLimit = Math.min(hoursFromStart, 24); // max 24 hours
 	}
 
 	for (let i = 0; i < actualHoursLimit; i++) {
@@ -387,6 +386,44 @@ export function calculateHourlySummary(
 	return filledSummaries;
 }
 
+export function getCurrentHourEntries(
+	entries: UsageEntry[],
+	referenceDate?: Date,
+): UsageEntry[] {
+	// If we have entries, check for year mismatch
+	let effectiveNow = referenceDate || new Date();
+
+	if (!referenceDate && entries.length > 0) {
+		// Find the most recent entry to determine the actual "current" time
+		const mostRecentEntry = entries.reduce((latest, entry) =>
+			new Date(entry.timestamp) > new Date(latest.timestamp) ? entry : latest,
+		);
+		const recentDate = new Date(mostRecentEntry.timestamp);
+		const systemDate = new Date();
+
+		// If years differ significantly, use the data's date as reference
+		if (Math.abs(systemDate.getFullYear() - recentDate.getFullYear()) >= 1) {
+			// Use the most recent entry's date but with current time
+			effectiveNow = new Date(recentDate);
+			effectiveNow.setHours(
+				systemDate.getHours(),
+				systemDate.getMinutes(),
+				systemDate.getSeconds(),
+			);
+		}
+	}
+
+	const currentHourStart = new Date(effectiveNow);
+	currentHourStart.setMinutes(0, 0, 0);
+	const currentHourEnd = new Date(currentHourStart);
+	currentHourEnd.setHours(currentHourEnd.getHours() + 1);
+
+	return entries.filter((entry) => {
+		const entryTime = new Date(entry.timestamp);
+		return entryTime >= currentHourStart && entryTime < currentHourEnd;
+	});
+}
+
 export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 	const daily = calculateDailySummary(entries);
 	const sessions = calculateSessionSummary(entries);
@@ -394,6 +431,56 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 
 	// Calculate hourly data
 	const hourly = calculateHourlySummary(entries, 24);
+
+	// Add current hour to hourly if not already included
+	const currentHourEntries24h = getCurrentHourEntries(entries);
+	if (currentHourEntries24h.length > 0) {
+		const now = new Date();
+		const currentHourKey = new Date(now);
+		currentHourKey.setMinutes(0, 0, 0);
+		const currentHourISO = currentHourKey.toISOString();
+
+		// Check if current hour is already in hourly
+		const currentHourIndex = hourly.findIndex((h) => h.hour === currentHourISO);
+
+		if (currentHourIndex === -1) {
+			// Current hour not in summary, add it
+			const currentHourTokens = {
+				inputTokens: 0,
+				outputTokens: 0,
+				cacheCreationTokens: 0,
+				cacheReadTokens: 0,
+			};
+			let currentHourCost = 0;
+
+			for (const entry of currentHourEntries24h) {
+				currentHourTokens.inputTokens += entry.message.usage.input_tokens || 0;
+				currentHourTokens.outputTokens +=
+					entry.message.usage.output_tokens || 0;
+				currentHourTokens.cacheCreationTokens +=
+					entry.message.usage.cache_creation_input_tokens || 0;
+				currentHourTokens.cacheReadTokens +=
+					entry.message.usage.cache_read_input_tokens || 0;
+				currentHourCost += entry.costUSD;
+			}
+
+			if (currentHourCost > 0) {
+				hourly.push({
+					hour: currentHourISO,
+					hourLabel: currentHourKey.toLocaleTimeString("en-US", {
+						hour: "2-digit",
+						minute: "2-digit",
+						hour12: false,
+					}),
+					tokens: currentHourTokens,
+					cost: currentHourCost,
+					entryCount: currentHourEntries24h.length,
+				});
+				// Re-sort to maintain chronological order
+				hourly.sort((a, b) => a.hour.localeCompare(b.hour));
+			}
+		}
+	}
 
 	// WORKAROUND: System date is set to 2025, but data is from 2024
 	// Get the most recent date from entries instead of using current date
@@ -415,11 +502,86 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 		}
 	}
 
+	// For todayHourly, we need to be more careful about date filtering
+	// since there might be a date mismatch between system and data
 	const todayEntries = entries.filter((e) => {
 		const entryDate = formatDate(e.timestamp);
+		// If we adjusted the date due to year mismatch, use that
+		// Otherwise use the actual system date
 		return entryDate === today;
 	});
-	const todayHourly = calculateHourlySummary(todayEntries, 24, true);
+
+	// If no entries found for "today" but we have recent entries,
+	// use the most recent day's entries as "today"
+	let effectiveTodayEntries = todayEntries;
+	if (todayEntries.length === 0 && entries.length > 0) {
+		// Get the most recent date from entries
+		const recentDates = new Set(entries.map((e) => formatDate(e.timestamp)));
+		const sortedDates = Array.from(recentDates).sort().reverse();
+		if (sortedDates.length > 0) {
+			const mostRecentDate = sortedDates[0];
+			effectiveTodayEntries = entries.filter(
+				(e) => formatDate(e.timestamp) === mostRecentDate,
+			);
+			console.log(
+				`No entries for system "today" (${today}), using most recent date: ${mostRecentDate}`,
+			);
+		}
+	}
+
+	const todayHourly = calculateHourlySummary(effectiveTodayEntries, 24, true);
+
+	// Add current hour if not already included
+	const currentHourEntries = getCurrentHourEntries(effectiveTodayEntries);
+	if (currentHourEntries.length > 0) {
+		const now = new Date();
+		const currentHourKey = new Date(now);
+		currentHourKey.setMinutes(0, 0, 0);
+		const currentHourISO = currentHourKey.toISOString();
+
+		// Check if current hour is already in todayHourly
+		const currentHourIndex = todayHourly.findIndex(
+			(h) => h.hour === currentHourISO,
+		);
+
+		if (currentHourIndex === -1) {
+			// Current hour not in summary, add it
+			const currentHourTokens = {
+				inputTokens: 0,
+				outputTokens: 0,
+				cacheCreationTokens: 0,
+				cacheReadTokens: 0,
+			};
+			let currentHourCost = 0;
+
+			for (const entry of currentHourEntries) {
+				currentHourTokens.inputTokens += entry.message.usage.input_tokens || 0;
+				currentHourTokens.outputTokens +=
+					entry.message.usage.output_tokens || 0;
+				currentHourTokens.cacheCreationTokens +=
+					entry.message.usage.cache_creation_input_tokens || 0;
+				currentHourTokens.cacheReadTokens +=
+					entry.message.usage.cache_read_input_tokens || 0;
+				currentHourCost += entry.costUSD;
+			}
+
+			if (currentHourCost > 0) {
+				todayHourly.push({
+					hour: currentHourISO,
+					hourLabel: currentHourKey.toLocaleTimeString("en-US", {
+						hour: "2-digit",
+						minute: "2-digit",
+						hour12: false,
+					}),
+					tokens: currentHourTokens,
+					cost: currentHourCost,
+					entryCount: currentHourEntries.length,
+				});
+				// Re-sort to maintain chronological order
+				todayHourly.sort((a, b) => a.hour.localeCompare(b.hour));
+			}
+		}
+	}
 
 	// Calculate today's data
 	const todayData = daily.find((d) => d.date === today) || null;

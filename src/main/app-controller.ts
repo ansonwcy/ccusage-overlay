@@ -1,3 +1,4 @@
+import { getCurrentHourEntries } from "@shared/data-loader";
 import type { AppSettings } from "@shared/types";
 import { app } from "electron";
 import Store from "electron-store";
@@ -80,12 +81,16 @@ export class AppController {
 	async initialize(): Promise<void> {
 		// Create tray icon first
 		this.trayManager.create();
-		
+
 		// Log notice about multi-monitor limitations
 		if (process.platform === "darwin") {
-			console.log("Note: On macOS, menu bar icons only appear on the primary display by default.");
+			console.log(
+				"Note: On macOS, menu bar icons only appear on the primary display by default.",
+			);
 			console.log("To show the menu bar on all displays:");
-			console.log("1. Go to System Settings > Desktop & Dock > Mission Control");
+			console.log(
+				"1. Go to System Settings > Desktop & Dock > Mission Control",
+			);
 			console.log("2. Enable 'Displays have separate Spaces'");
 			console.log("3. Log out and log back in");
 		}
@@ -142,14 +147,14 @@ export class AppController {
 						nativeTheme.shouldUseDarkColors,
 					);
 				});
-				
+
 				// Handle display changes (monitors connected/disconnected)
 				screen.on("display-added", () => {
 					// Recreate tray to ensure it appears on all displays
 					console.log("Display added, refreshing tray...");
 					this.refreshTray();
 				});
-				
+
 				screen.on("display-removed", () => {
 					// Recreate tray to ensure it appears on remaining displays
 					console.log("Display removed, refreshing tray...");
@@ -213,17 +218,53 @@ export class AppController {
 			todayHourlyData = dayEntries;
 		}
 
-		if (todayData) {
+		if (todayData || todayHourlyData) {
+			// Get all entries to find current hour entries
+			const allEntries = this.dataService.getAllEntries();
+			const currentHourEntries = getCurrentHourEntries(allEntries);
+
+			// Calculate current hour cost
+			const currentHourCost = currentHourEntries.reduce(
+				(sum, entry) => sum + entry.costUSD,
+				0,
+			);
+
+			// Calculate today's total cost by summing all hourly data
+			// This matches how the footer calculates it in ExpandedView
+			let todayTotalCost = 0;
+			if (todayHourlyData && todayHourlyData.length > 0) {
+				// Sum up all hourly costs for today
+				todayTotalCost = todayHourlyData.reduce(
+					(sum, hour) => sum + hour.cost,
+					0,
+				);
+			}
+
+			// Add current hour cost if not already included in hourly data
+			// Check if the current hour is already in todayHourlyData
+			const now = new Date();
+			const currentHourKey = new Date(now);
+			currentHourKey.setMinutes(0, 0, 0);
+			const currentHourISO = currentHourKey.toISOString();
+
+			const isCurrentHourIncluded =
+				todayHourlyData?.some((h) => h.hour === currentHourISO) || false;
+			if (!isCurrentHourIncluded && currentHourCost > 0) {
+				todayTotalCost += currentHourCost;
+			}
+
 			// Calculate current session cost using the session calculator
 			const currentSessionCost = calculateCurrentSessionCost(
 				todayHourlyData || [],
+				new Date(),
+				currentHourEntries,
 			);
 
-			this.trayManager.updateCost(todayData.cost, currentSessionCost);
+			this.trayManager.updateCost(todayTotalCost, currentSessionCost);
 
 			// Check for alerts
 			const dailyLimit = this.settingsStore.get("notifications.dailyLimit");
-			if (dailyLimit && todayData.cost > dailyLimit) {
+			if (dailyLimit && todayTotalCost > dailyLimit) {
 				this.trayManager.setAlertState(true);
 				// TODO: Send notification
 			} else {
@@ -275,11 +316,11 @@ export class AppController {
 		// Store current cost values
 		const currentCost = this.trayManager.currentCost || 0;
 		const currentSessionCost = this.trayManager.currentSessionCost || 0;
-		
+
 		// Destroy and recreate tray
 		this.trayManager.destroy();
 		this.trayManager.create();
-		
+
 		// Restore cost values
 		this.trayManager.updateCost(currentCost, currentSessionCost);
 	}

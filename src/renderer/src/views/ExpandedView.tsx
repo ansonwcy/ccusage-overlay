@@ -100,6 +100,14 @@ function identifySessions(hourlyData: HourlyUsage[]): Session[] {
 
 	// Add any remaining session
 	if (currentSession && currentSession.hours.length > 0) {
+		// Check if this is the most recent session (last hour is the most recent in data)
+		const lastHour = hourlyData[hourlyData.length - 1];
+		if (lastHour && currentSession.hours.includes(lastHour)) {
+			// This is the most recent session, mark it as ongoing if less than 5 hours
+			if (currentSession.hours.length < 5) {
+				currentSession.isOngoing = true;
+			}
+		}
 		// Hours are already in chronological order
 		sessions.push(currentSession);
 	}
