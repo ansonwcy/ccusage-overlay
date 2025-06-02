@@ -213,33 +213,38 @@ export function ExpandedView({
 														</td>
 													</tr>
 													{/* Session hours */}
-													{session.hours.slice().reverse().map((hour) => {
-														const totalTokens =
-															hour.tokens.inputTokens +
-															hour.tokens.outputTokens +
-															hour.tokens.cacheCreationTokens +
-															hour.tokens.cacheReadTokens;
+													{session.hours
+														.slice()
+														.reverse()
+														.map((hour) => {
+															const totalTokens =
+																hour.tokens.inputTokens +
+																hour.tokens.outputTokens +
+																hour.tokens.cacheCreationTokens +
+																hour.tokens.cacheReadTokens;
 
-														return (
-															<tr
-																key={hour.hour}
-																className="border-b border-[var(--border)] hover:bg-[var(--bg-secondary)]"
-															>
-																<td className="px-3 py-1 text-xs text-[var(--text-primary)] pl-6">
-																	{hour.hourLabel}
-																</td>
-																<td className="px-3 py-1 text-xs text-right text-[var(--text-primary)]">
-																	{hour.entryCount}
-																</td>
-																<td className="px-3 py-1 text-xs text-right text-[var(--text-primary)]">
-																	{formatTokenCount(totalTokens)}
-																</td>
-																<td className="px-3 py-1 text-xs text-right font-medium text-[var(--text-primary)]">
-																	{hour.cost > 0 ? formatCost(hour.cost) : "—"}
-																</td>
-															</tr>
-														);
-													})}
+															return (
+																<tr
+																	key={hour.hour}
+																	className="border-b border-[var(--border)] hover:bg-[var(--bg-secondary)]"
+																>
+																	<td className="px-3 py-1 text-xs text-[var(--text-primary)] pl-6">
+																		{hour.hourLabel}
+																	</td>
+																	<td className="px-3 py-1 text-xs text-right text-[var(--text-primary)]">
+																		{hour.entryCount}
+																	</td>
+																	<td className="px-3 py-1 text-xs text-right text-[var(--text-primary)]">
+																		{formatTokenCount(totalTokens)}
+																	</td>
+																	<td className="px-3 py-1 text-xs text-right font-medium text-[var(--text-primary)]">
+																		{hour.cost > 0
+																			? formatCost(hour.cost)
+																			: "—"}
+																	</td>
+																</tr>
+															);
+														})}
 													{/* Show 'continues...' if this is the most recent session and has less than 5 hours */}
 													{session.isOngoing && (
 														<tr className="border-b border-[var(--border)]">
@@ -363,12 +368,23 @@ export function ExpandedView({
 					{viewMode === "hourly" ? (
 						<div className="text-xs text-[var(--text-secondary)]">
 							Today:{" "}
-							{formatCost(
-								(data.todayHourly || []).reduce(
+							{(() => {
+								const todayTotal = (data.todayHourly || []).reduce(
 									(sum, item) => sum + item.cost,
 									0,
-								),
-							)}
+								);
+								// Debug logging
+								console.log("[Footer] Today's cost calculation:", {
+									todayHourlyDataLength: data.todayHourly?.length || 0,
+									todayTotal,
+									todayHourlyData: data.todayHourly?.map(h => ({
+										hour: h.hour,
+										hourLabel: h.hourLabel,
+										cost: h.cost
+									}))
+								});
+								return formatCost(todayTotal);
+							})()}
 						</div>
 					) : (
 						<>

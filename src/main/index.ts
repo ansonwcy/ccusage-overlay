@@ -27,7 +27,13 @@ function setupIpcHandlers(controller: AppController): void {
 	// Usage data handlers
 	ipcMain.handle("usage:request-data", async (_event, options) => {
 		// The AppController's DataService handles this
-		return controller.dataService.getAggregatedData();
+		const data = controller.dataService.getAggregatedData();
+		console.log("[IPC] Sending data to renderer:", {
+			hasToday: !!data.today,
+			hasTodayHourly: !!data.todayHourly,
+			todayHourlyLength: data.todayHourly?.length || 0
+		});
+		return data;
 	});
 
 	ipcMain.handle("usage:refresh-data", async () => {

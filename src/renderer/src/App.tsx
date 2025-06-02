@@ -31,8 +31,14 @@ function App(): JSX.Element {
 		// Subscribe to real-time updates
 		let unsubscribe = () => {};
 		if (window.electronAPI?.usage?.onDataUpdate) {
-			unsubscribe = window.electronAPI.usage.onDataUpdate((newData) => {
-				useUsageStore.getState().setData(newData);
+			unsubscribe = window.electronAPI.usage.onDataUpdate((payload) => {
+				console.log("[Renderer] Received data update:", {
+					type: payload.type,
+					hasToday: !!payload.data?.today,
+					hasTodayHourly: !!payload.data?.todayHourly,
+					todayHourlyLength: payload.data?.todayHourly?.length || 0
+				});
+				useUsageStore.getState().setData(payload.data);
 			});
 		}
 

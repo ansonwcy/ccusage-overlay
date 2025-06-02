@@ -549,6 +549,13 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 	}
 
 	const todayHourly = calculateHourlySummary(effectiveTodayEntries, 24, true);
+	
+	console.log("[data-loader] todayHourly calculation:", {
+		today,
+		effectiveTodayEntriesCount: effectiveTodayEntries.length,
+		todayHourlyLength: todayHourly.length,
+		todayHourlyTotal: todayHourly.reduce((sum, h) => sum + h.cost, 0)
+	});
 
 	// Add current hour if not already included
 	// For today's data, we need to use the effective date (which might be from 2024 data)

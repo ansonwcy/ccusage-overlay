@@ -202,107 +202,98 @@ export class AppController {
 	private updateTrayWithLatestData(): void {
 		const data = this.dataService.getAggregatedData();
 
-		// Try to get today's data, or fall back to most recent day
-		let todayData = data.today;
-		let todayHourlyData = data.todayHourly;
+		// Use the EXACT same data as the footer - just data.todayHourly
+		const todayHourlyData = data.todayHourly || [];
+		
+		// Calculate today's total cost by summing all hourly data
+		// This matches EXACTLY how the footer calculates it in ExpandedView
+		const todayTotalCost = todayHourlyData.reduce(
+			(sum, hour) => sum + hour.cost,
+			0,
+		);
+		
+		// Debug logging
+		console.log("[Menu Bar] Today's cost calculation:", {
+			todayHourlyDataLength: todayHourlyData.length,
+			todayTotalCost,
+			todayHourlyData: todayHourlyData.map(h => ({
+				hour: h.hour,
+				hourLabel: h.hourLabel,
+				cost: h.cost
+			}))
+		});
 
-		if (!todayData && data.daily && data.daily.length > 0) {
-			// Use the most recent day's data as "today"
-			todayData = data.daily[0];
+		// Calculate current session cost using the same logic as the UI
+		// The UI uses data.hourly for sessions, not just todayHourly
+		const hourlyData = data.hourly || [];
+		let currentSessionCost = 0;
 
-			// Get hourly data for that day
-			const dayEntries =
-				data.hourly?.filter((h) => h.hour.startsWith(todayData.date)) || [];
-			todayHourlyData = dayEntries;
-		}
+		// Replicate identifySessions logic to find the most recent session
+		if (hourlyData.length > 0) {
+			// Use the exact same session identification logic as ExpandedView
+			let currentSession: {
+				hours: typeof hourlyData;
+				totalCost: number;
+			} | null = null;
+			let sessionStartIndex = -1;
 
-		if (todayData || todayHourlyData) {
-			// Calculate today's total cost by summing all hourly data
-			// This matches EXACTLY how the footer calculates it in ExpandedView (line 366-371)
-			let todayTotalCost = 0;
-			if (todayHourlyData && todayHourlyData.length > 0) {
-				todayTotalCost = todayHourlyData.reduce(
-					(sum, hour) => sum + hour.cost,
-					0,
-				);
-			}
+			// Process from oldest to newest (same as UI)
+			for (let i = 0; i < hourlyData.length; i++) {
+				const hour = hourlyData[i];
 
-			// Calculate current session cost using the same logic as the UI
-			// The UI uses data.hourly for sessions, not just todayHourly
-			const hourlyData = data.hourly || [];
-			let currentSessionCost = 0;
+				if (hour.cost > 0) {
+					// Start new session or continue existing one
+					if (!currentSession) {
+						sessionStartIndex = i;
+						currentSession = {
+							hours: [],
+							totalCost: 0,
+						};
+					}
 
-			// Replicate identifySessions logic to find the most recent session
-			if (hourlyData.length > 0) {
-				// Use the exact same session identification logic as ExpandedView
-				let currentSession: {
-					hours: typeof hourlyData;
-					totalCost: number;
-				} | null = null;
-				let sessionStartIndex = -1;
+					// Add hour to current session
+					currentSession.hours.push(hour);
+					currentSession.totalCost += hour.cost;
 
-				// Process from oldest to newest (same as UI)
-				for (let i = 0; i < hourlyData.length; i++) {
-					const hour = hourlyData[i];
-
-					if (hour.cost > 0) {
-						// Start new session or continue existing one
-						if (!currentSession) {
-							sessionStartIndex = i;
-							currentSession = {
-								hours: [],
-								totalCost: 0,
-							};
-						}
-
-						// Add hour to current session
-						currentSession.hours.push(hour);
-						currentSession.totalCost += hour.cost;
-
-						// Check if we've reached the 5-hour limit
-						if (i - sessionStartIndex + 1 >= 5) {
-							// Session complete, reset for potential new session
-							currentSession = null;
-						}
-					} else if (currentSession && i - sessionStartIndex < 5) {
-						// Continue session even with zero-cost hours if within 5-hour window
-						currentSession.hours.push(hour);
-
-						if (i - sessionStartIndex + 1 >= 5) {
-							// Session complete
-							currentSession = null;
-						}
-					} else if (currentSession) {
-						// We've gone beyond 5 hours from the session start, end it
+					// Check if we've reached the 5-hour limit
+					if (i - sessionStartIndex + 1 >= 5) {
+						// Session complete, reset for potential new session
 						currentSession = null;
 					}
-				}
+				} else if (currentSession && i - sessionStartIndex < 5) {
+					// Continue session even with zero-cost hours if within 5-hour window
+					currentSession.hours.push(hour);
 
-				// If we have a current session that includes the most recent hour
-				if (currentSession && currentSession.hours.length > 0) {
-					const lastHour = hourlyData[hourlyData.length - 1];
-					if (currentSession.hours.includes(lastHour)) {
-						// This is the most recent session
-						currentSessionCost = currentSession.totalCost;
+					if (i - sessionStartIndex + 1 >= 5) {
+						// Session complete
+						currentSession = null;
 					}
+				} else if (currentSession) {
+					// We've gone beyond 5 hours from the session start, end it
+					currentSession = null;
 				}
 			}
 
-			// Add current session cost to today's total for menu bar display
-			const menuBarTotalCost = todayTotalCost + currentSessionCost;
-			this.trayManager.updateCost(menuBarTotalCost, currentSessionCost);
-
-			// Check for alerts
-			const dailyLimit = this.settingsStore.get("notifications.dailyLimit");
-			if (dailyLimit && todayTotalCost > dailyLimit) {
-				this.trayManager.setAlertState(true);
-				// TODO: Send notification
-			} else {
-				this.trayManager.setAlertState(false);
+			// If we have a current session that includes the most recent hour
+			if (currentSession && currentSession.hours.length > 0) {
+				const lastHour = hourlyData[hourlyData.length - 1];
+				if (currentSession.hours.includes(lastHour)) {
+					// This is the most recent session
+					currentSessionCost = currentSession.totalCost;
+				}
 			}
+		}
+
+		// Use the same calculation as the footer - just today's total, not including session
+		this.trayManager.updateCost(todayTotalCost, currentSessionCost);
+
+		// Check for alerts
+		const dailyLimit = this.settingsStore.get("notifications.dailyLimit");
+		if (dailyLimit && todayTotalCost > dailyLimit) {
+			this.trayManager.setAlertState(true);
+			// TODO: Send notification
 		} else {
-			// Show zero if no data
-			this.trayManager.updateCost(0, 0);
+			this.trayManager.setAlertState(false);
 		}
 
 		// Cache the aggregated data

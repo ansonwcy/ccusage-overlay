@@ -165,6 +165,13 @@ export class DataService {
 	private broadcastDataUpdate(): void {
 		const data = this.getAggregatedData();
 		const windows = BrowserWindow.getAllWindows();
+		
+		console.log("[DataService] Broadcasting data update:", {
+			hasToday: !!data.today,
+			hasTodayHourly: !!data.todayHourly,
+			todayHourlyLength: data.todayHourly?.length || 0,
+			windowCount: windows.length
+		});
 
 		for (const window of windows) {
 			window.webContents.send("usage:data-update", {
