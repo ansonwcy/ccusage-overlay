@@ -213,7 +213,7 @@ export function ExpandedView({
 														</td>
 													</tr>
 													{/* Session hours */}
-													{session.hours.map((hour) => {
+													{session.hours.slice().reverse().map((hour) => {
 														const totalTokens =
 															hour.tokens.inputTokens +
 															hour.tokens.outputTokens +
