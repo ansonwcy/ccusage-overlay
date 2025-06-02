@@ -3,7 +3,6 @@ import { app } from "electron";
 import Store from "electron-store";
 import { CacheManager } from "./services/cache-manager";
 import { DataService } from "./services/data-service";
-import { calculateCurrentSessionCost } from "./services/session-calculator";
 import { TrayManager } from "./tray/tray-manager";
 import { WindowManager } from "./windows/window-manager";
 
@@ -228,13 +227,66 @@ export class AppController {
 				);
 			}
 
-			// Calculate current session cost using the session calculator
-			const allEntries = this.dataService.getAllEntries();
-			const currentSessionCost = calculateCurrentSessionCost(
-				todayHourlyData || [],
-				new Date(),
-				allEntries,
-			);
+			// Calculate current session cost using the same logic as the UI
+			// The UI uses data.hourly for sessions, not just todayHourly
+			const hourlyData = data.hourly || [];
+			let currentSessionCost = 0;
+
+			// Replicate identifySessions logic to find the most recent session
+			if (hourlyData.length > 0) {
+				// Use the exact same session identification logic as ExpandedView
+				let currentSession: {
+					hours: typeof hourlyData;
+					totalCost: number;
+				} | null = null;
+				let sessionStartIndex = -1;
+
+				// Process from oldest to newest (same as UI)
+				for (let i = 0; i < hourlyData.length; i++) {
+					const hour = hourlyData[i];
+
+					if (hour.cost > 0) {
+						// Start new session or continue existing one
+						if (!currentSession) {
+							sessionStartIndex = i;
+							currentSession = {
+								hours: [],
+								totalCost: 0,
+							};
+						}
+
+						// Add hour to current session
+						currentSession.hours.push(hour);
+						currentSession.totalCost += hour.cost;
+
+						// Check if we've reached the 5-hour limit
+						if (i - sessionStartIndex + 1 >= 5) {
+							// Session complete, reset for potential new session
+							currentSession = null;
+						}
+					} else if (currentSession && i - sessionStartIndex < 5) {
+						// Continue session even with zero-cost hours if within 5-hour window
+						currentSession.hours.push(hour);
+
+						if (i - sessionStartIndex + 1 >= 5) {
+							// Session complete
+							currentSession = null;
+						}
+					} else if (currentSession) {
+						// We've gone beyond 5 hours from the session start, end it
+						currentSession = null;
+					}
+				}
+
+				// If we have a current session that includes the most recent hour
+				if (currentSession && currentSession.hours.length > 0) {
+					const lastHour = hourlyData[hourlyData.length - 1];
+					if (currentSession.hours.includes(lastHour)) {
+						// This is the most recent session
+						currentSessionCost = currentSession.totalCost;
+					}
+				}
+			}
 
 			this.trayManager.updateCost(todayTotalCost, currentSessionCost);
 
