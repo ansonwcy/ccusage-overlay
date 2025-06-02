@@ -3,6 +3,7 @@ import { app } from "electron";
 import Store from "electron-store";
 import { CacheManager } from "./services/cache-manager";
 import { DataService } from "./services/data-service";
+import { calculateCurrentSessionCost } from "./services/session-calculator";
 import { TrayManager } from "./tray/tray-manager";
 import { WindowManager } from "./windows/window-manager";
 
@@ -123,7 +124,7 @@ export class AppController {
 
 		// Handle system theme changes
 		if (process.platform === "darwin") {
-			import("electron").then(({ nativeTheme }) => {
+			import("electron").then(({ nativeTheme, screen }) => {
 				nativeTheme.on("updated", () => {
 					// Notify renderer about theme change
 					const window = this.windowManager.getMainWindow();
@@ -131,6 +132,19 @@ export class AppController {
 						"theme:changed",
 						nativeTheme.shouldUseDarkColors,
 					);
+				});
+				
+				// Handle display changes (monitors connected/disconnected)
+				screen.on("display-added", () => {
+					// Recreate tray to ensure it appears on all displays
+					console.log("Display added, refreshing tray...");
+					this.refreshTray();
+				});
+				
+				screen.on("display-removed", () => {
+					// Recreate tray to ensure it appears on remaining displays
+					console.log("Display removed, refreshing tray...");
+					this.refreshTray();
 				});
 			});
 		}
@@ -183,55 +197,18 @@ export class AppController {
 		if (!todayData && data.daily && data.daily.length > 0) {
 			// Use the most recent day's data as "today"
 			todayData = data.daily[0];
-			
+
 			// Get hourly data for that day
-			const dayEntries = data.hourly?.filter(h => 
-				h.hour.startsWith(todayData.date)
-			) || [];
+			const dayEntries =
+				data.hourly?.filter((h) => h.hour.startsWith(todayData.date)) || [];
 			todayHourlyData = dayEntries;
 		}
 
 		if (todayData) {
-			// Calculate current session cost
-			let currentSessionCost = 0;
-
-			if (todayHourlyData && todayHourlyData.length > 0) {
-				const currentTime = new Date();
-				
-				// todayHourly is in chronological order, we need to reverse to find the most recent session
-				const reversedHours = [...todayHourlyData].reverse();
-
-				// Find the most recent hour with activity
-				let sessionStartIndex = -1;
-				for (let i = 0; i < reversedHours.length; i++) {
-					const hour = reversedHours[i];
-					if (hour.cost > 0) {
-						sessionStartIndex = i;
-						break;
-					}
-				}
-
-				if (sessionStartIndex >= 0) {
-					// Check if this is within the current session window (5 hours)
-					const mostRecentActiveHour = reversedHours[sessionStartIndex];
-					const hourTime = new Date(mostRecentActiveHour.hour).getTime();
-					const timeDiff = currentTime.getTime() - hourTime;
-					const hoursDiff = timeDiff / (60 * 60 * 1000);
-					
-					// If within 5 hours, calculate session cost
-					if (hoursDiff < 5) {
-						// Calculate session cost starting from this hour going backwards
-						for (
-							let j = sessionStartIndex;
-							j < Math.min(sessionStartIndex + 5, reversedHours.length);
-							j++
-						) {
-							const sessionHour = reversedHours[j];
-							currentSessionCost += sessionHour.cost;
-						}
-					}
-				}
-			}
+			// Calculate current session cost using the session calculator
+			const currentSessionCost = calculateCurrentSessionCost(
+				todayHourlyData || [],
+			);
 
 			this.trayManager.updateCost(todayData.cost, currentSessionCost);
 
@@ -283,6 +260,19 @@ export class AppController {
 			clearInterval(this.updateInterval);
 		}
 		this.startPeriodicUpdates();
+	}
+
+	private refreshTray(): void {
+		// Store current cost values
+		const currentCost = this.trayManager.currentCost || 0;
+		const currentSessionCost = this.trayManager.currentSessionCost || 0;
+		
+		// Destroy and recreate tray
+		this.trayManager.destroy();
+		this.trayManager.create();
+		
+		// Restore cost values
+		this.trayManager.updateCost(currentCost, currentSessionCost);
 	}
 
 	private cleanup(): void {

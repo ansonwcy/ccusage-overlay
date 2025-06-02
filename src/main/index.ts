@@ -87,8 +87,15 @@ function setupIpcHandlers(controller: AppController): void {
 // App initialization
 app.whenReady().then(async () => {
 	try {
-		// Ensure app stays active
-		app.dock?.hide(); // Hide dock icon on macOS for menu bar apps
+		// Configure app for menu bar
+		if (process.platform === "darwin") {
+			// Ensure app stays active
+			app.dock?.hide(); // Hide dock icon on macOS for menu bar apps
+			
+			// Set activation policy to accessory to ensure menu bar appears on all screens
+			// This is important for multi-monitor setups
+			app.setActivationPolicy("accessory");
+		}
 
 		// Create and initialize the app controller
 		appController = new AppController();

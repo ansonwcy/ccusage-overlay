@@ -10,8 +10,8 @@ const __trayDirname = path.dirname(__trayFilename);
 export class TrayManager {
 	private tray: Tray | null = null;
 	private windowManager: WindowManager;
-	private currentCost = 0;
-	private currentSessionCost = 0;
+	public currentCost = 0;
+	public currentSessionCost = 0;
 	private isAlertState = false;
 
 	constructor(windowManager: WindowManager) {
@@ -28,6 +28,13 @@ export class TrayManager {
 
 		// Set initial title
 		this.tray.setTitle("Loading...");
+		
+		// Ensure the tray is visible on all displays
+		// This is particularly important for multi-monitor setups
+		if (process.platform === "darwin") {
+			// Force the tray to refresh its position
+			this.tray.setImage(icon);
+		}
 
 		// Set up click handlers
 		this.tray.on("click", () => {

@@ -13,6 +13,10 @@ const config: ForgeConfig = {
 		appCategoryType: "public.app-category.developer-tools",
 		appCopyright: "Copyright © 2024 Claude Code Team",
 		darwinDarkModeSupport: true,
+		extendInfo: {
+			LSUIElement: true, // This makes the app a true menu bar app (no dock icon)
+			LSBackgroundOnly: false, // Allow the app to show windows
+		},
 		osxSign: {},
 		osxNotarize: {
 			tool: "notarytool",

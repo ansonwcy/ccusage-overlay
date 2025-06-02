@@ -353,7 +353,6 @@ export function calculateHourlySummary(
 		);
 		// Add 1 to include the current hour
 		actualHoursLimit = Math.min(hoursFromStart + 1, 24); // max 24 hours
-
 	}
 
 	for (let i = 0; i < actualHoursLimit; i++) {
@@ -385,7 +384,6 @@ export function calculateHourlySummary(
 		}
 	}
 
-
 	return filledSummaries;
 }
 
@@ -410,7 +408,9 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 		const systemYear = new Date().getFullYear();
 		const dataYear = recentDate.getFullYear();
 		if (Math.abs(systemYear - dataYear) >= 1) {
-			console.log(`System year (${systemYear}) differs from data year (${dataYear}), using data date`);
+			console.log(
+				`System year (${systemYear}) differs from data year (${dataYear}), using data date`,
+			);
 			today = formatDate(mostRecentEntry.timestamp);
 		}
 	}

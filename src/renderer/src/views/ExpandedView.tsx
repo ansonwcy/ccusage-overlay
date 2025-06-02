@@ -49,7 +49,8 @@ function identifySessions(hourlyData: HourlyUsage[]): Session[] {
 	let currentSession: Session | null = null;
 	let sessionStartIndex = -1;
 
-	// Process from newest to oldest to detect sessions
+	// hourlyData is in chronological order (oldest to newest)
+	// Process from oldest to newest
 	for (let i = 0; i < hourlyData.length; i++) {
 		const hour = hourlyData[i];
 
@@ -58,44 +59,40 @@ function identifySessions(hourlyData: HourlyUsage[]): Session[] {
 			if (!currentSession) {
 				sessionStartIndex = i;
 				currentSession = {
-					startHour: hour.hourLabel, // Will be updated to earliest hour
-					endHour: hour.hourLabel, // This is the most recent hour
+					startHour: hour.hourLabel, // This is the start of the session
+					endHour: hour.hourLabel, // Will be updated as we progress
 					hours: [],
 					totalCost: 0,
 					date: getDateFromHour(hour.hour),
 					isOngoing: false,
 				};
-
 			}
 
 			// Add hour to current session
 			currentSession.hours.push(hour);
 			currentSession.totalCost += hour.cost;
-			// Always update startHour to the current hour (which is earlier in time)
-			currentSession.startHour = hour.hourLabel;
+			// Update endHour to the current hour (which is later in time)
+			currentSession.endHour = hour.hourLabel;
 
 			// Check if we've reached the 5-hour limit
 			if (i - sessionStartIndex + 1 >= 5) {
-				// Reverse hours to be in chronological order
-				currentSession.hours.reverse();
+				// Hours are already in chronological order
 				sessions.push(currentSession);
 				currentSession = null;
 			}
 		} else if (currentSession && i - sessionStartIndex < 5) {
 			// Continue session even with zero-cost hours if within 5-hour window
 			currentSession.hours.push(hour);
-			currentSession.startHour = hour.hourLabel;
+			currentSession.endHour = hour.hourLabel;
 
 			if (i - sessionStartIndex + 1 >= 5) {
-				// Reverse hours to be in chronological order
-				currentSession.hours.reverse();
+				// Hours are already in chronological order
 				sessions.push(currentSession);
 				currentSession = null;
 			}
 		} else if (currentSession) {
 			// We've gone beyond 5 hours from the session start, end it
-			// Reverse hours to be in chronological order
-			currentSession.hours.reverse();
+			// Hours are already in chronological order
 			sessions.push(currentSession);
 			currentSession = null;
 		}
@@ -103,13 +100,12 @@ function identifySessions(hourlyData: HourlyUsage[]): Session[] {
 
 	// Add any remaining session
 	if (currentSession && currentSession.hours.length > 0) {
-		// Reverse hours to be in chronological order
-		currentSession.hours.reverse();
+		// Hours are already in chronological order
 		sessions.push(currentSession);
 	}
 
-	// Sort sessions by date (latest first)
-	// Since we process backwards, older sessions are added first, so we need to reverse
+	// Sessions are already in chronological order (oldest to newest)
+	// Reverse to show newest first
 	sessions.reverse();
 
 	return sessions;
