@@ -29,7 +29,7 @@ After enabling this setting, the menu bar and all menu bar icons (including Clau
 
 ### Download the App
 
-[[**Download Claude Usage Overlay.dmg**](https://github.com/ansonwcy/cc-project/releases/latest/download/Claude.Usage.Overlay.dmg)](https://github.com/ansonwcy/ccusage-panel/releases/download/v0.0.1/ccusage-overlay.zip) (macOS)
+[[**Download Claude Usage Overlay.dmg**]](https://github.com/ansonwcy/ccusage-panel/releases/download/v0.0.1/ccusage-overlay.zip) (macOS)
 
 Install the app by:
 
