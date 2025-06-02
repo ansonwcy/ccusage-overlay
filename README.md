@@ -12,6 +12,19 @@ A macOS desktop overlay application that displays Claude Code usage statistics i
 - 🎨 Light/Dark theme support
 - 🔄 Automatic file watching and updates
 
+## Multi-Monitor Support
+
+**Note**: Due to macOS system limitations, menu bar icons only appear on the primary display by default.
+
+To show the menu bar (and this app's icon) on all displays:
+
+1. Go to **System Settings > Desktop & Dock**
+2. Scroll down to **Mission Control**
+3. Enable **"Displays have separate Spaces"**
+4. **Log out and log back in** for the change to take effect
+
+After enabling this setting, the menu bar and all menu bar icons (including Claude Code Usage Overlay) will appear on all connected displays.
+
 ## Development Setup
 
 ### Prerequisites

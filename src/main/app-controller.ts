@@ -80,6 +80,15 @@ export class AppController {
 	async initialize(): Promise<void> {
 		// Create tray icon first
 		this.trayManager.create();
+		
+		// Log notice about multi-monitor limitations
+		if (process.platform === "darwin") {
+			console.log("Note: On macOS, menu bar icons only appear on the primary display by default.");
+			console.log("To show the menu bar on all displays:");
+			console.log("1. Go to System Settings > Desktop & Dock > Mission Control");
+			console.log("2. Enable 'Displays have separate Spaces'");
+			console.log("3. Log out and log back in");
+		}
 
 		// Initialize data service
 		await this.dataService.initialize();
