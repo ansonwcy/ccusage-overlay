@@ -212,6 +212,17 @@ export function ExpandedView({
 															</div>
 														</td>
 													</tr>
+													{/* Show 'continues...' if this is the most recent session and has less than 5 hours */}
+													{session.isOngoing && (
+														<tr className="border-b border-[var(--border)]">
+															<td
+																colSpan={4}
+																className="px-3 py-1 text-xs text-[var(--text-secondary)] italic text-center"
+															>
+																continues...
+															</td>
+														</tr>
+													)}
 													{/* Session hours */}
 													{session.hours
 														.slice()
@@ -245,17 +256,6 @@ export function ExpandedView({
 																</tr>
 															);
 														})}
-													{/* Show 'continues...' if this is the most recent session and has less than 5 hours */}
-													{session.isOngoing && (
-														<tr className="border-b border-[var(--border)]">
-															<td
-																colSpan={4}
-																className="px-3 py-1 text-xs text-[var(--text-secondary)] italic text-center"
-															>
-																continues...
-															</td>
-														</tr>
-													)}
 												</React.Fragment>
 											))
 										: // No sessions, show all hours
