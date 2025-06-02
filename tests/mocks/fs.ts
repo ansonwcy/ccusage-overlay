@@ -1,7 +1,9 @@
-import { vi } from "vitest"
-import type { UsageEntry } from "@shared/types"
+import type { UsageEntry } from "@shared/types";
+import { vi } from "vitest";
 
-export function createMockUsageEntry(overrides?: Partial<UsageEntry>): UsageEntry {
+export function createMockUsageEntry(
+	overrides?: Partial<UsageEntry>,
+): UsageEntry {
 	return {
 		timestamp: "2024-01-01T12:00:00Z",
 		message: {
@@ -17,11 +19,11 @@ export function createMockUsageEntry(overrides?: Partial<UsageEntry>): UsageEntr
 		session: "test-session",
 		filePath: "/path/to/file.jsonl",
 		...overrides,
-	}
+	};
 }
 
 export function createMockJsonlContent(entries: UsageEntry[]): string {
-	return entries.map((entry) => JSON.stringify(entry)).join("\n")
+	return entries.map((entry) => JSON.stringify(entry)).join("\n");
 }
 
 export const mockFs = {
@@ -29,11 +31,11 @@ export const mockFs = {
 	readdir: vi.fn(),
 	stat: vi.fn(),
 	access: vi.fn(),
-}
+};
 
-export const mockGlob = vi.fn(() => Promise.resolve([]))
+export const mockGlob = vi.fn(() => Promise.resolve([]));
 
-vi.mock("node:fs/promises", () => mockFs)
+vi.mock("node:fs/promises", () => mockFs);
 vi.mock("tinyglobby", () => ({
 	glob: mockGlob,
-}))
+}));

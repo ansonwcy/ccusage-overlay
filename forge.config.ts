@@ -1,9 +1,9 @@
-import type { ForgeConfig } from "@electron-forge/shared-types"
-import { MakerZIP } from "@electron-forge/maker-zip"
-import { MakerDMG } from "@electron-forge/maker-dmg"
-import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives"
-import { FusesPlugin } from "@electron-forge/plugin-fuses"
-import { FuseV1Options, FuseVersion } from "@electron/fuses"
+import { MakerDMG } from "@electron-forge/maker-dmg";
+import { MakerZIP } from "@electron-forge/maker-zip";
+import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import type { ForgeConfig } from "@electron-forge/shared-types";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 const config: ForgeConfig = {
 	packagerConfig: {
@@ -44,6 +44,6 @@ const config: ForgeConfig = {
 			[FuseV1Options.OnlyLoadAppFromAsar]: true,
 		}),
 	],
-}
+};
 
-export default config
+export default config;

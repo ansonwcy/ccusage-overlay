@@ -1,107 +1,123 @@
-import { Tray, Menu, nativeImage, app } from "electron"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
-import type { WindowManager } from "../windows/window-manager"
-import { formatCost } from "@shared/calculate-cost"
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { formatCost } from "@shared/calculate-cost";
+import { Menu, Tray, app, nativeImage } from "electron";
+import type { WindowManager } from "../windows/window-manager";
 
-const __trayFilename = fileURLToPath(import.meta.url)
-const __trayDirname = path.dirname(__trayFilename)
+const __trayFilename = fileURLToPath(import.meta.url);
+const __trayDirname = path.dirname(__trayFilename);
 
 export class TrayManager {
-	private tray: Tray | null = null
-	private windowManager: WindowManager
-	private currentCost = 0
-	private isAlertState = false
+	private tray: Tray | null = null;
+	private windowManager: WindowManager;
+	private currentCost = 0;
+	private currentSessionCost = 0;
+	private isAlertState = false;
 
 	constructor(windowManager: WindowManager) {
-		this.windowManager = windowManager
+		this.windowManager = windowManager;
 	}
 
 	create(): void {
 		// Create tray icon
-		const iconPath = path.join(__trayDirname, "../../../resources/icon.png")
-		const icon = this.createTrayIcon(iconPath)
-		
-		this.tray = new Tray(icon)
-		this.updateTooltip()
-		
+		const iconPath = path.join(__trayDirname, "../../../../resources/icon.png");
+		const icon = this.createTrayIcon(iconPath);
+
+		this.tray = new Tray(icon);
+		this.updateTooltip();
+
+		// Set initial title
+		this.tray.setTitle("Loading...");
+
 		// Set up click handlers
 		this.tray.on("click", () => {
-			this.handleClick()
-		})
-		
+			this.handleClick();
+		});
+
 		this.tray.on("right-click", () => {
-			this.showContextMenu()
-		})
-		
+			this.showContextMenu();
+		});
+
 		// Double-click to open expanded view (macOS)
 		this.tray.on("double-click", () => {
-			this.windowManager.showWindow()
-			this.windowManager.setWindowMode("expanded")
-		})
+			this.windowManager.showWindow();
+			this.windowManager.setWindowMode("expanded");
+		});
 	}
 
 	private createTrayIcon(iconPath: string): Electron.NativeImage {
 		// Create a base icon
-		let icon = nativeImage.createFromPath(iconPath)
-		
+		let icon = nativeImage.createFromPath(iconPath);
+
+		if (icon.isEmpty()) {
+			// Create a small transparent icon as fallback
+			icon = nativeImage.createEmpty();
+		}
+
 		// Resize for menu bar (16x16 on regular displays, 32x32 on retina)
-		icon = icon.resize({ width: 16, height: 16 })
-		
+		icon = icon.resize({ width: 16, height: 16 });
+
 		// Make it a template image for macOS (will adapt to light/dark mode)
-		icon.setTemplateImage(true)
-		
-		return icon
+		if (process.platform === "darwin") {
+			icon.setTemplateImage(true);
+		}
+
+		return icon;
 	}
 
-	updateCost(cost: number): void {
-		this.currentCost = cost
-		this.updateTooltip()
-		
+	updateCost(cost: number, sessionCost = 0): void {
+		if (!this.tray) return;
+
+		this.currentCost = cost;
+		this.currentSessionCost = sessionCost;
+		this.updateTooltip();
+
 		// Update tray title (shows next to icon on macOS)
-		if (this.tray) {
-			const showCostInMenuBar = true // TODO: Get from settings
-			if (showCostInMenuBar) {
-				this.tray.setTitle(formatCost(cost))
-			} else {
-				this.tray.setTitle("")
+		const showCostInMenuBar = true; // TODO: Get from settings
+		if (showCostInMenuBar) {
+			let title = formatCost(cost);
+			if (sessionCost > 0) {
+				title += ` (${formatCost(sessionCost)})`;
 			}
+			this.tray.setTitle(title);
+		} else {
+			this.tray.setTitle("");
 		}
 	}
 
 	setAlertState(isAlert: boolean): void {
-		this.isAlertState = isAlert
+		this.isAlertState = isAlert;
 		// TODO: Update icon to show alert state
-		this.updateTooltip()
+		this.updateTooltip();
 	}
 
 	private updateTooltip(): void {
-		if (!this.tray) return
-		
-		const baseTooltip = "Claude Usage"
-		const costInfo = formatCost(this.currentCost)
-		const alertInfo = this.isAlertState ? " ⚠️ Limit exceeded" : ""
-		
-		this.tray.setToolTip(`${baseTooltip} - Today: ${costInfo}${alertInfo}`)
+		if (!this.tray) return;
+
+		const baseTooltip = "Claude Usage";
+		const costInfo = formatCost(this.currentCost);
+		const alertInfo = this.isAlertState ? " ⚠️ Limit exceeded" : "";
+
+		this.tray.setToolTip(`${baseTooltip} - Today: ${costInfo}${alertInfo}`);
 	}
 
 	private handleClick(): void {
-		if (!this.tray) return
-		
-		const trayBounds = this.tray.getBounds()
-		const window = this.windowManager.getMainWindow()
-		
+		if (!this.tray) return;
+
+		const trayBounds = this.tray.getBounds();
+		const window = this.windowManager.getMainWindow();
+
 		if (window?.isVisible()) {
-			this.windowManager.hideWindow()
+			this.windowManager.hideWindow();
 		} else {
-			this.windowManager.showWindow()
-			this.windowManager.positionWindowNearTray(trayBounds)
+			this.windowManager.showWindow();
+			this.windowManager.positionWindowNearTray(trayBounds);
 		}
 	}
 
 	private showContextMenu(): void {
-		if (!this.tray) return
-		
+		if (!this.tray) return;
+
 		const contextMenu = Menu.buildFromTemplate([
 			{
 				label: "Show Window",
@@ -146,7 +162,7 @@ export class TrayManager {
 				accelerator: "CmdOrCtrl+,",
 				click: () => {
 					// TODO: Open settings window
-					this.windowManager.showWindow()
+					this.windowManager.showWindow();
 				},
 			},
 			{ type: "separator" },
@@ -160,18 +176,22 @@ export class TrayManager {
 				label: "Quit",
 				accelerator: "CmdOrCtrl+Q",
 				click: () => {
-					app.quit()
+					app.quit();
 				},
 			},
-		])
-		
-		this.tray.popUpContextMenu(contextMenu)
+		]);
+
+		this.tray.popUpContextMenu(contextMenu);
+	}
+
+	getTray(): Tray | null {
+		return this.tray;
 	}
 
 	destroy(): void {
 		if (this.tray) {
-			this.tray.destroy()
-			this.tray = null
+			this.tray.destroy();
+			this.tray = null;
 		}
 	}
 }

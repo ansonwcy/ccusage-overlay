@@ -1,14 +1,14 @@
 interface EmptyStateProps {
-	message?: string
+	message?: string;
 	action?: {
-		label: string
-		onClick: () => void
-	}
+		label: string;
+		onClick: () => void;
+	};
 }
 
-export function EmptyState({ 
+export function EmptyState({
 	message = "No usage data found",
-	action 
+	action,
 }: EmptyStateProps) {
 	return (
 		<div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -41,5 +41,5 @@ export function EmptyState({
 				</button>
 			)}
 		</div>
-	)
+	);
 }

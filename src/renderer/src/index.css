@@ -10,7 +10,7 @@
 		--color-warning: #f59e0b;
 		--color-danger: #ef4444;
 		--color-neutral: #6b7280;
-		
+
 		--bg-primary: #ffffff;
 		--bg-secondary: #f9fafb;
 		--bg-tertiary: #f3f4f6;
@@ -18,7 +18,7 @@
 		--text-secondary: #6b7280;
 		--border: #e5e7eb;
 	}
-	
+
 	.dark {
 		--bg-primary: #111827;
 		--bg-secondary: #1f2937;
@@ -27,16 +27,17 @@
 		--text-secondary: #9ca3af;
 		--border: #374151;
 	}
-	
+
 	html,
 	body,
 	#root {
 		@apply h-full overflow-hidden;
 	}
-	
+
 	body {
 		@apply bg-[var(--bg-primary)] text-[var(--text-primary)];
-		font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+		font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+			"SF Pro Text", "Helvetica Neue", sans-serif;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		margin: 0;
@@ -68,5 +69,16 @@
 	}
 	.bg-danger {
 		@apply bg-[#ef4444];
+	}
+
+	/* Hide scrollbar for Chrome, Safari and Opera */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Hide scrollbar for IE, Edge and Firefox */
+	.no-scrollbar {
+		-ms-overflow-style: none; /* IE and Edge */
+		scrollbar-width: none; /* Firefox */
 	}
 }

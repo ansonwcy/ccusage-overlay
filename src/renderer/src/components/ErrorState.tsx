@@ -1,6 +1,6 @@
 interface ErrorStateProps {
-	error: string
-	onRetry?: () => void
+	error: string;
+	onRetry?: () => void;
 }
 
 export function ErrorState({ error, onRetry }: ErrorStateProps) {
@@ -35,5 +35,5 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
 				</button>
 			)}
 		</div>
-	)
+	);
 }

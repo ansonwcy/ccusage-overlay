@@ -1,84 +1,75 @@
-import { useEffect } from "react"
-import { useUsageStore } from "./stores/useUsageStore"
-import { useSettingsStore } from "./stores/useSettingsStore"
-import { useSystemTheme, useThemeStore } from "./stores/useThemeStore"
-import { TitleBar } from "./components/TitleBar"
-import { LoadingState } from "./components/LoadingState"
-import { ErrorState } from "./components/ErrorState"
-import { CompactView } from "./views/CompactView"
-import { StandardView } from "./views/StandardView"
-import { ExpandedView } from "./views/ExpandedView"
-import clsx from "clsx"
+import { useEffect } from "react";
+import { ErrorState } from "./components/ErrorState";
+import { LoadingState } from "./components/LoadingState";
+import { TitleBar } from "./components/TitleBar";
+import { useSettingsStore } from "./stores/useSettingsStore";
+import { useSystemTheme, useThemeStore } from "./stores/useThemeStore";
+import { useUsageStore } from "./stores/useUsageStore";
+import { ExpandedView } from "./views/ExpandedView";
 
 function App(): JSX.Element {
-	const { data, loading, error, fetchData, viewMode, setViewMode } = useUsageStore()
-	const { windowMode, loadSettings } = useSettingsStore()
-	const isDark = useThemeStore((state) => state.isDark)
-	
+	const {
+		data,
+		loading,
+		error,
+		fetchData,
+		refreshData,
+		viewMode,
+		setViewMode,
+	} = useUsageStore();
+	const { loadSettings } = useSettingsStore();
+	const isDark = useThemeStore((state) => state.isDark);
+
 	// Initialize system theme
-	useSystemTheme()
-	
+	useSystemTheme();
+
 	// Load initial data
 	useEffect(() => {
-		loadSettings()
-		fetchData()
-		
+		loadSettings();
+		fetchData();
+
 		// Subscribe to real-time updates
-		let unsubscribe = () => {}
+		let unsubscribe = () => {};
 		if (window.electronAPI?.usage?.onDataUpdate) {
 			unsubscribe = window.electronAPI.usage.onDataUpdate((newData) => {
-				useUsageStore.getState().setData(newData)
-			})
+				useUsageStore.getState().setData(newData);
+			});
 		}
-		
+
 		// Refresh data periodically
 		const interval = setInterval(() => {
-			fetchData()
-		}, 30000) // 30 seconds
-		
+			fetchData();
+		}, 30000); // 30 seconds
+
 		return () => {
-			unsubscribe()
-			clearInterval(interval)
-		}
-	}, [fetchData, loadSettings])
-	
+			unsubscribe();
+			clearInterval(interval);
+		};
+	}, [fetchData, loadSettings]);
+
 	// Apply theme class to body
 	useEffect(() => {
-		document.documentElement.classList.toggle("dark", isDark)
-	}, [isDark])
-	
-	const showTitleBar = windowMode !== "compact"
-	
+		document.documentElement.classList.toggle("dark", isDark);
+	}, [isDark]);
+
 	return (
-		<div className={clsx(
-			"flex flex-col h-screen overflow-hidden",
-			"bg-[var(--bg-primary)] text-[var(--text-primary)]",
-			{
-				"rounded-lg": windowMode === "compact",
-			}
-		)}>
-			{showTitleBar && <TitleBar />}
-			
+		<div className="flex flex-col h-screen overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
+			<TitleBar />
+
 			<div className="flex-1 overflow-hidden">
-				{loading && <LoadingState />}
-				{error && <ErrorState error={error} onRetry={fetchData} />}
-				{!loading && !error && (
-					<>
-						{windowMode === "compact" && <CompactView data={data} />}
-						{windowMode === "standard" && <StandardView data={data} onRefresh={fetchData} />}
-						{windowMode === "expanded" && (
-							<ExpandedView 
-								data={data} 
-								viewMode={viewMode}
-								onViewModeChange={setViewMode}
-								onRefresh={fetchData}
-							/>
-						)}
-					</>
+				{loading && !data && <LoadingState />}
+				{error && <ErrorState error={error} onRetry={refreshData} />}
+				{!error && data && (
+					<ExpandedView
+						data={data}
+						viewMode={viewMode}
+						onViewModeChange={setViewMode}
+						onRefresh={refreshData}
+					/>
 				)}
 			</div>
 		</div>
-	)
+	);
 }
 
-export default App
+export default App;

@@ -5,7 +5,9 @@ export function LoadingState() {
 				<div className="absolute inset-0 border-4 border-[var(--bg-tertiary)] rounded-full" />
 				<div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 			</div>
-			<p className="mt-4 text-sm text-[var(--text-secondary)]">Loading usage data...</p>
+			<p className="mt-4 text-sm text-[var(--text-secondary)]">
+				Loading usage data...
+			</p>
 		</div>
-	)
+	);
 }
