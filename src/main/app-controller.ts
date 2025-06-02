@@ -284,6 +284,22 @@ export class AppController {
 					if (currentSession.hours.includes(lastHour)) {
 						// This is the most recent session
 						currentSessionCost = currentSession.totalCost;
+
+						// If the current session spans multiple days, ensure today's total
+						// includes all hours from today that are part of the session
+						const todayDateStr =
+							todayData?.date || new Date().toISOString().split("T")[0];
+						for (const hour of currentSession.hours) {
+							if (hour.hour.startsWith(todayDateStr)) {
+								// This hour is from today, check if it's already in todayHourlyData
+								const isInTodayData =
+									todayHourlyData?.some((h) => h.hour === hour.hour) || false;
+								if (!isInTodayData && hour.cost > 0) {
+									// Add this hour's cost to today's total
+									todayTotalCost += hour.cost;
+								}
+							}
+						}
 					}
 				}
 			}
