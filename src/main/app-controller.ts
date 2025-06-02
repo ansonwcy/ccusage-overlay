@@ -1,4 +1,3 @@
-import { getCurrentHourEntries } from "@shared/data-loader";
 import type { AppSettings } from "@shared/types";
 import { app } from "electron";
 import Store from "electron-store";
@@ -219,45 +218,22 @@ export class AppController {
 		}
 
 		if (todayData || todayHourlyData) {
-			// Get all entries to find current hour entries
-			const allEntries = this.dataService.getAllEntries();
-			const currentHourEntries = getCurrentHourEntries(allEntries);
-
-			// Calculate current hour cost
-			const currentHourCost = currentHourEntries.reduce(
-				(sum, entry) => sum + entry.costUSD,
-				0,
-			);
-
 			// Calculate today's total cost by summing all hourly data
-			// This matches how the footer calculates it in ExpandedView
+			// This matches EXACTLY how the footer calculates it in ExpandedView (line 366-371)
 			let todayTotalCost = 0;
 			if (todayHourlyData && todayHourlyData.length > 0) {
-				// Sum up all hourly costs for today
 				todayTotalCost = todayHourlyData.reduce(
 					(sum, hour) => sum + hour.cost,
 					0,
 				);
 			}
 
-			// Add current hour cost if not already included in hourly data
-			// Check if the current hour is already in todayHourlyData
-			const now = new Date();
-			const currentHourKey = new Date(now);
-			currentHourKey.setMinutes(0, 0, 0);
-			const currentHourISO = currentHourKey.toISOString();
-
-			const isCurrentHourIncluded =
-				todayHourlyData?.some((h) => h.hour === currentHourISO) || false;
-			if (!isCurrentHourIncluded && currentHourCost > 0) {
-				todayTotalCost += currentHourCost;
-			}
-
 			// Calculate current session cost using the session calculator
+			const allEntries = this.dataService.getAllEntries();
 			const currentSessionCost = calculateCurrentSessionCost(
 				todayHourlyData || [],
 				new Date(),
-				currentHourEntries,
+				allEntries,
 			);
 
 			this.trayManager.updateCost(todayTotalCost, currentSessionCost);

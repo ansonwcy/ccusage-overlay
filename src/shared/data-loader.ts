@@ -433,9 +433,28 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 	const hourly = calculateHourlySummary(entries, 24);
 
 	// Add current hour to hourly if not already included
-	const currentHourEntries24h = getCurrentHourEntries(entries);
-	if (currentHourEntries24h.length > 0) {
+	// Get reference date from the most recent entry
+	let referenceDate24h: Date | undefined;
+	if (entries.length > 0) {
+		const mostRecentEntry = entries.reduce((latest, entry) =>
+			new Date(entry.timestamp) > new Date(latest.timestamp) ? entry : latest,
+		);
+		referenceDate24h = new Date(mostRecentEntry.timestamp);
+		// Set to current time but keep the date
 		const now = new Date();
+		referenceDate24h.setHours(
+			now.getHours(),
+			now.getMinutes(),
+			now.getSeconds(),
+		);
+	}
+
+	const currentHourEntries24h = getCurrentHourEntries(
+		entries,
+		referenceDate24h,
+	);
+	if (currentHourEntries24h.length > 0) {
+		const now = referenceDate24h || new Date();
 		const currentHourKey = new Date(now);
 		currentHourKey.setMinutes(0, 0, 0);
 		const currentHourISO = currentHourKey.toISOString();
@@ -532,9 +551,25 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 	const todayHourly = calculateHourlySummary(effectiveTodayEntries, 24, true);
 
 	// Add current hour if not already included
-	const currentHourEntries = getCurrentHourEntries(effectiveTodayEntries);
-	if (currentHourEntries.length > 0) {
+	// For today's data, we need to use the effective date (which might be from 2024 data)
+	let referenceDate: Date | undefined;
+	if (effectiveTodayEntries.length > 0) {
+		// Use the most recent entry's date as reference
+		const mostRecentEntry = effectiveTodayEntries.reduce((latest, entry) =>
+			new Date(entry.timestamp) > new Date(latest.timestamp) ? entry : latest,
+		);
+		referenceDate = new Date(mostRecentEntry.timestamp);
+		// Set to current time but keep the date
 		const now = new Date();
+		referenceDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+	}
+
+	const currentHourEntries = getCurrentHourEntries(
+		effectiveTodayEntries,
+		referenceDate,
+	);
+	if (currentHourEntries.length > 0) {
+		const now = referenceDate || new Date();
 		const currentHourKey = new Date(now);
 		currentHourKey.setMinutes(0, 0, 0);
 		const currentHourISO = currentHourKey.toISOString();

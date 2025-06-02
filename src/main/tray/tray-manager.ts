@@ -28,7 +28,7 @@ export class TrayManager {
 
 		// Set initial title
 		this.tray.setTitle("Loading...");
-		
+
 		// Ensure the tray is visible on all displays
 		// This is particularly important for multi-monitor setups
 		if (process.platform === "darwin") {

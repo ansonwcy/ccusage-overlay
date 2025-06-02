@@ -91,7 +91,7 @@ app.whenReady().then(async () => {
 		if (process.platform === "darwin") {
 			// Ensure app stays active
 			app.dock?.hide(); // Hide dock icon on macOS for menu bar apps
-			
+
 			// Set activation policy to accessory to ensure menu bar appears on all screens
 			// This is important for multi-monitor setups
 			app.setActivationPolicy("accessory");

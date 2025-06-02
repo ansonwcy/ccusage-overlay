@@ -175,13 +175,17 @@ export class DataService {
 		}
 	}
 
-	getAggregatedData(): UsageData {
+	getAllEntries(): UsageEntry[] {
 		// Flatten all entries from cache
 		const allEntries: UsageEntry[] = [];
 		for (const entries of this.cache.values()) {
 			allEntries.push(...entries);
 		}
+		return allEntries;
+	}
 
+	getAggregatedData(): UsageData {
+		const allEntries = this.getAllEntries();
 		return aggregateUsageData(allEntries);
 	}
 

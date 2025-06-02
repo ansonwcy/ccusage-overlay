@@ -1,10 +1,21 @@
-import type { HourlySummary } from "@shared/types";
+import { getCurrentHourEntries } from "@shared/data-loader";
+import type { HourlySummary, UsageEntry } from "@shared/types";
 
 export function calculateCurrentSessionCost(
 	todayHourlyData: HourlySummary[],
 	currentTime: Date = new Date(),
+	allEntries?: UsageEntry[],
 ): number {
+	// Get current hour entries from all entries
+	const currentHourEntries = allEntries
+		? getCurrentHourEntries(allEntries, currentTime)
+		: [];
+
 	if (!todayHourlyData || todayHourlyData.length === 0) {
+		// If we only have current hour entries, calculate from those
+		if (currentHourEntries && currentHourEntries.length > 0) {
+			return currentHourEntries.reduce((sum, entry) => sum + entry.costUSD, 0);
+		}
 		return 0;
 	}
 
@@ -75,6 +86,22 @@ export function calculateCurrentSessionCost(
 		} else {
 			// Found a gap in activity, session starts after this
 			break;
+		}
+	}
+
+	// Add current hour entries if they exist and are part of the session
+	if (currentHourEntries && currentHourEntries.length > 0) {
+		// Check if current hour is within session window
+		const currentHourStart = new Date(currentTime);
+		currentHourStart.setMinutes(0, 0, 0);
+
+		// If we have activity in the last 5 hours, current hour is part of session
+		if (hoursSinceLastActivity < 5) {
+			const currentHourCost = currentHourEntries.reduce(
+				(sum, entry) => sum + entry.costUSD,
+				0,
+			);
+			sessionCost += currentHourCost;
 		}
 	}
 
