@@ -31,7 +31,7 @@ export class AppController {
 					showMenuBarIcon: true,
 					showCostInMenuBar: true,
 					defaultView: "daily",
-					updateFrequency: 30,
+					updateFrequency: 10,
 					claudeDataDirectory: "",
 				},
 				appearance: {
