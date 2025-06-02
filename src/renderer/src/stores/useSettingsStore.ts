@@ -29,8 +29,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 			const settings = await window.electronAPI.settings.getAll();
 			set({ settings });
 		} catch (error) {
-			// biome-ignore lint/suspicious/noConsole: Log error
-			console.error("Failed to load settings:", error);
+			// Failed to load settings
 		}
 	},
 
@@ -43,8 +42,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 			// Reload settings to ensure consistency
 			await get().loadSettings();
 		} catch (error) {
-			// biome-ignore lint/suspicious/noConsole: Log error
-			console.error("Failed to update setting:", error);
+			// Failed to update setting
 		}
 	},
 

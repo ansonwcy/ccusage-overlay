@@ -10,13 +10,11 @@ let appController: AppController | null = null;
 
 // Handle unhandled errors
 process.on("uncaughtException", (error) => {
-	// biome-ignore lint/suspicious/noConsole: Required for error logging
-	console.error("Uncaught Exception:", error);
+	// Uncaught exception
 });
 
 process.on("unhandledRejection", (error) => {
-	// biome-ignore lint/suspicious/noConsole: Required for error logging
-	console.error("Unhandled Rejection:", error);
+	// Unhandled rejection
 });
 
 // IPC Handlers
@@ -28,11 +26,6 @@ function setupIpcHandlers(controller: AppController): void {
 	ipcMain.handle("usage:request-data", async (_event, options) => {
 		// The AppController's DataService handles this
 		const data = controller.dataService.getAggregatedData();
-		console.log("[IPC] Sending data to renderer:", {
-			hasToday: !!data.today,
-			hasTodayHourly: !!data.todayHourly,
-			todayHourlyLength: data.todayHourly?.length || 0
-		});
 		return data;
 	});
 
@@ -110,13 +103,9 @@ app.whenReady().then(async () => {
 		// Set up IPC handlers
 		setupIpcHandlers(appController);
 
-		// Log successful startup
-		// biome-ignore lint/suspicious/noConsole: Required for startup logging
-		console.log("Claude Usage Overlay started successfully");
-		console.log("App is ready, dock hidden:", !app.dock?.isVisible());
+		// App started successfully
 	} catch (error) {
-		// biome-ignore lint/suspicious/noConsole: Required for error logging
-		console.error("Failed to initialize app:", error);
+		// Failed to initialize app
 		app.quit();
 	}
 });

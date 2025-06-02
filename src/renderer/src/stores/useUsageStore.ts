@@ -53,10 +53,8 @@ export const useUsageStore = create<UsageStore>((set, get) => ({
 			if (!window.electronAPI?.usage?.refreshData) {
 				throw new Error("Electron API not available");
 			}
-			console.log("Refreshing all data...");
 			const data = await window.electronAPI.usage.refreshData();
 			set({ data, loading: false, lastUpdated: new Date() });
-			console.log("Data refreshed successfully");
 		} catch (error) {
 			set({
 				error:

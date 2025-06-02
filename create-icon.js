@@ -162,4 +162,3 @@ const pngData = Buffer.from([
 ]);
 
 fs.writeFileSync(path.join(__dirname, "resources", "icon.png"), pngData);
-console.log("Created placeholder icon.png");

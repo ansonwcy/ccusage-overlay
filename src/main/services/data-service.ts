@@ -70,8 +70,7 @@ export class DataService {
 							totalEntries += entries.length;
 						}
 					} catch (error) {
-						// biome-ignore lint/suspicious/noConsole: Log error for debugging
-						console.error(`Error loading file ${file}:`, error);
+						// Error loading file
 					}
 				}),
 			);
@@ -101,8 +100,7 @@ export class DataService {
 				this.queueFileUpdate(filePath, "unlink");
 			})
 			.on("error", (error) => {
-				// biome-ignore lint/suspicious/noConsole: Log watcher errors
-				console.error("File watcher error:", error);
+				// File watcher error
 			});
 	}
 
@@ -148,8 +146,7 @@ export class DataService {
 							this.cache.delete(update.path);
 						}
 					} catch (error) {
-						// biome-ignore lint/suspicious/noConsole: Log parsing errors
-						console.error(`Error processing file ${update.path}:`, error);
+						// Error processing file
 						this.cache.delete(update.path);
 					}
 				}
@@ -166,12 +163,6 @@ export class DataService {
 		const data = this.getAggregatedData();
 		const windows = BrowserWindow.getAllWindows();
 		
-		console.log("[DataService] Broadcasting data update:", {
-			hasToday: !!data.today,
-			hasTodayHourly: !!data.todayHourly,
-			todayHourlyLength: data.todayHourly?.length || 0,
-			windowCount: windows.length
-		});
 
 		for (const window of windows) {
 			window.webContents.send("usage:data-update", {

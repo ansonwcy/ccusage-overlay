@@ -80,18 +80,6 @@ export class AppController {
 		// Create tray icon first
 		this.trayManager.create();
 
-		// Log notice about multi-monitor limitations
-		if (process.platform === "darwin") {
-			console.log(
-				"Note: On macOS, menu bar icons only appear on the primary display by default.",
-			);
-			console.log("To show the menu bar on all displays:");
-			console.log(
-				"1. Go to System Settings > Desktop & Dock > Mission Control",
-			);
-			console.log("2. Enable 'Displays have separate Spaces'");
-			console.log("3. Log out and log back in");
-		}
 
 		// Initialize data service
 		await this.dataService.initialize();
@@ -149,13 +137,11 @@ export class AppController {
 				// Handle display changes (monitors connected/disconnected)
 				screen.on("display-added", () => {
 					// Recreate tray to ensure it appears on all displays
-					console.log("Display added, refreshing tray...");
 					this.refreshTray();
 				});
 
 				screen.on("display-removed", () => {
 					// Recreate tray to ensure it appears on remaining displays
-					console.log("Display removed, refreshing tray...");
 					this.refreshTray();
 				});
 			});
@@ -176,8 +162,7 @@ export class AppController {
 					openAsHidden: true,
 				});
 			} catch (error) {
-				// biome-ignore lint/suspicious/noConsole: Log error
-				console.warn("Failed to set login item settings:", error);
+				// Failed to set login item settings
 			}
 		}
 
@@ -212,16 +197,6 @@ export class AppController {
 			0,
 		);
 		
-		// Debug logging
-		console.log("[Menu Bar] Today's cost calculation:", {
-			todayHourlyDataLength: todayHourlyData.length,
-			todayTotalCost,
-			todayHourlyData: todayHourlyData.map(h => ({
-				hour: h.hour,
-				hourLabel: h.hourLabel,
-				cost: h.cost
-			}))
-		});
 
 		// Calculate current session cost using the same logic as the UI
 		// The UI uses data.hourly for sessions, not just todayHourly
@@ -320,8 +295,7 @@ export class AppController {
 					openAsHidden: true,
 				});
 			} catch (error) {
-				// biome-ignore lint/suspicious/noConsole: Log error
-				console.warn("Failed to update login item settings:", error);
+				// Failed to update login item settings
 			}
 		}
 	}

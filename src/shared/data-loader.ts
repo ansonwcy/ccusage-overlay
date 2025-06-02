@@ -69,8 +69,6 @@ export async function parseJsonlFile(filePath: string): Promise<UsageEntry[]> {
 			});
 		} catch (error) {
 			// Skip malformed lines
-			// biome-ignore lint/suspicious/noConsole: Log parsing errors for debugging
-			console.warn(`Skipping malformed line in ${filePath}`);
 		}
 	}
 
@@ -514,9 +512,6 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 		const systemYear = new Date().getFullYear();
 		const dataYear = recentDate.getFullYear();
 		if (Math.abs(systemYear - dataYear) >= 1) {
-			console.log(
-				`System year (${systemYear}) differs from data year (${dataYear}), using data date`,
-			);
 			today = formatDate(mostRecentEntry.timestamp);
 		}
 	}
@@ -542,20 +537,10 @@ export function aggregateUsageData(entries: UsageEntry[]): UsageData {
 			effectiveTodayEntries = entries.filter(
 				(e) => formatDate(e.timestamp) === mostRecentDate,
 			);
-			console.log(
-				`No entries for system "today" (${today}), using most recent date: ${mostRecentDate}`,
-			);
 		}
 	}
 
 	const todayHourly = calculateHourlySummary(effectiveTodayEntries, 24, true);
-	
-	console.log("[data-loader] todayHourly calculation:", {
-		today,
-		effectiveTodayEntriesCount: effectiveTodayEntries.length,
-		todayHourlyLength: todayHourly.length,
-		todayHourlyTotal: todayHourly.reduce((sum, h) => sum + h.cost, 0)
-	});
 
 	// Add current hour if not already included
 	// For today's data, we need to use the effective date (which might be from 2024 data)

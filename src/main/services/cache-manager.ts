@@ -55,8 +55,7 @@ export class CacheManager {
 				this.currentMemorySize = cached.size;
 			}
 		} catch (error) {
-			// biome-ignore lint/suspicious/noConsole: Log cache loading errors
-			console.error("Error loading persistent cache:", error);
+			// Error loading persistent cache
 			this.persistentStore.clear();
 		}
 	}
@@ -131,8 +130,7 @@ export class CacheManager {
 			removed++;
 		}
 
-		// biome-ignore lint/suspicious/noConsole: Log eviction for monitoring
-		console.log(`Cache eviction: removed ${removed} entries`);
+		// Cache eviction complete
 	}
 
 	clear(): void {

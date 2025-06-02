@@ -373,16 +373,6 @@ export function ExpandedView({
 									(sum, item) => sum + item.cost,
 									0,
 								);
-								// Debug logging
-								console.log("[Footer] Today's cost calculation:", {
-									todayHourlyDataLength: data.todayHourly?.length || 0,
-									todayTotal,
-									todayHourlyData: data.todayHourly?.map(h => ({
-										hour: h.hour,
-										hourLabel: h.hourLabel,
-										cost: h.cost
-									}))
-								});
 								return formatCost(todayTotal);
 							})()}
 						</div>
