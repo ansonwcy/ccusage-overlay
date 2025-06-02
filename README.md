@@ -25,6 +25,18 @@ To show the menu bar (and this app's icon) on all displays:
 
 After enabling this setting, the menu bar and all menu bar icons (including Claude Code Usage Overlay) will appear on all connected displays.
 
+## Installation
+
+### Download the App
+
+[**Download Claude Usage Overlay.dmg**](https://github.com/ansonwcy/cc-project/releases/latest/download/Claude.Usage.Overlay.dmg) (macOS)
+
+Install the app by:
+
+1. Double-clicking the DMG file
+2. Dragging the app to your Applications folder
+3. Opening the app from Applications (you may need to right-click and select "Open" the first time)
+
 ## Development Setup
 
 ### Prerequisites
@@ -122,6 +134,11 @@ npm run package
 # Create DMG installer
 npm run make
 ```
+
+The built files will be available in:
+- **Packaged app**: `out/ccusage-overlay-darwin-arm64/`
+- **DMG installer**: `out/make/Claude Usage Overlay.dmg`
+- **ZIP archive**: `out/make/zip/`
 
 ## Contributing
 
